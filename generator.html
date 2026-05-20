@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitab Generator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, serif;
+    background: #1a1a1a;
+    color: #e0d8cc;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  .wrap { max-width: 700px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: normal; margin-bottom: 2rem; color: #c8b89a; letter-spacing: 0.05em; }
+
+  /* ── FORM ── */
+  label { display: block; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin-bottom: 0.5rem; }
+  input[type=text], textarea {
+    width: 100%; background: #252525; border: 1px solid #333; border-radius: 6px;
+    color: #e0d8cc; font-family: Georgia, serif; font-size: 1rem;
+    padding: 0.75rem 1rem; outline: none; transition: border-color 0.2s; margin-bottom: 1.5rem;
+  }
+  input[type=text]:focus, textarea:focus { border-color: #c8b89a; }
+  textarea { resize: vertical; min-height: 280px; line-height: 1.7; }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 0.8rem; margin-bottom: 0.8rem; }
+  .btn {
+    flex: 1; border: none; border-radius: 6px; font-family: Georgia, serif;
+    font-size: 0.95rem; font-weight: bold; padding: 0.85rem 0.5rem;
+    cursor: pointer; letter-spacing: 0.04em; transition: background 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.985); }
+  .btn-primary { background: #c8b89a; color: #1a1a1a; }
+  .btn-primary:hover { background: #d9caaa; }
+  .btn-secondary { background: #2e2b24; color: #c8b89a; border: 1px solid #444; }
+  .btn-secondary:hover { background: #3a352c; border-color: #c8b89a; }
+  .btn-github { background: #24292e; color: #e0d8cc; border: 1px solid #444; }
+  .btn-github:hover { background: #2f363d; border-color: #c8b89a; }
+
+  .note { font-size: 0.78rem; color: #555; line-height: 1.5; margin-bottom: 2.5rem; }
+
+  /* ── GITHUB SETUP BOX ── */
+  .gh-box {
+    background: #1e1c18; border: 1px solid #333; border-radius: 10px;
+    padding: 1.2rem 1.4rem; margin-bottom: 2rem; display: none;
+  }
+  .gh-box.visible { display: block; }
+  .gh-box h3 { font-size: 0.85rem; color: #c8b89a; font-weight: normal; margin-bottom: 1rem; letter-spacing: 0.05em; }
+  .gh-row { display: flex; gap: 0.6rem; margin-bottom: 0.8rem; align-items: center; }
+  .gh-input {
+    flex: 1; background: #252525; border: 1px solid #333; border-radius: 6px;
+    color: #e0d8cc; font-family: Georgia, serif; font-size: 0.9rem;
+    padding: 0.55rem 0.8rem; outline: none; transition: border-color 0.2s;
+  }
+  .gh-input:focus { border-color: #c8b89a; }
+  .gh-label { font-size: 0.75rem; color: #888; white-space: nowrap; min-width: 80px; }
+  .gh-hint { font-size: 0.73rem; color: #555; line-height: 1.5; margin-top: 0.3rem; }
+  .gh-hint a { color: #8a7a5a; }
+  .gh-save-btn {
+    background: #c8b89a; color: #1a1a1a; border: none; border-radius: 6px;
+    font-family: Georgia, serif; font-size: 0.82rem; font-weight: bold;
+    padding: 0.5rem 1rem; cursor: pointer; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .gh-save-btn:hover { background: #d9caaa; }
+
+  /* ── STATUS ── */
+  .status {
+    padding: 0.7rem 1rem; border-radius: 6px; font-size: 0.85rem;
+    margin-bottom: 1rem; display: none; line-height: 1.5;
+  }
+  .status.show { display: block; }
+  .status.ok  { background: #1a2a1a; border: 1px solid #2a5a2a; color: #7acd7a; }
+  .status.err { background: #2a1a1a; border: 1px solid #5a2a2a; color: #cd7a7a; }
+  .status.loading { background: #1a1e2a; border: 1px solid #2a3a5a; color: #7aaad0; }
+
+  /* ── LIBRARY ── */
+  .lib-section { margin-top: 2rem; }
+  .lib-section h2 { font-size: 1rem; font-weight: normal; color: #c8b89a; margin-bottom: 1rem; letter-spacing: 0.05em; border-bottom: 1px solid #2a2820; padding-bottom: 0.6rem; }
+  .lib-empty { font-size: 0.82rem; color: #555; font-style: italic; padding: 0.5rem 0; }
+  .lib-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .lib-item {
+    background: #1e1c18; border: 1px solid #2a2820; border-radius: 8px;
+    padding: 0.8rem 1rem; display: flex; align-items: center; gap: 0.8rem;
+    transition: border-color 0.2s;
+  }
+  .lib-item:hover { border-color: #444; }
+  .lib-item-title { flex: 1; font-size: 0.92rem; color: #e0d8cc; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lib-item-date { font-size: 0.72rem; color: #555; flex-shrink: 0; }
+  .lib-open-btn {
+    background: #c8b89a; color: #1a1a1a; border: none; border-radius: 5px;
+    font-family: Georgia, serif; font-size: 0.78rem; font-weight: bold;
+    padding: 0.35rem 0.75rem; cursor: pointer; white-space: nowrap;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .lib-open-btn:hover { background: #d9caaa; }
+  .lib-del-btn {
+    background: none; border: none; color: #555; cursor: pointer; font-size: 1rem;
+    padding: 0.1rem 0.3rem; transition: color 0.2s; flex-shrink: 0;
+  }
+  .lib-del-btn:hover { color: #cd7a7a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📖 Kitab Oxucu — Generator</h1>
+
+  <label for="gtitle">Kitab / Fəsil başlığı</label>
+  <input type="text" id="gtitle" placeholder="məs. Dünyanın Sonuna Səyahət — I Fəsil">
+
+  <label for="gcontent">Mətn məzmunu</label>
+  <textarea id="gcontent" placeholder="Kitabdan kopyaladığın mətni bura yapışdır..."></textarea>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="downloadHTML()">⬇ HTML kimi yüklə</button>
+    <button class="btn btn-secondary" onclick="saveToLibrary()">📚 Kitabxanama əlavə et</button>
+    <button class="btn btn-github" id="btnGithub">🐙 GitHub-a göndər</button>
+  </div>
+
+  <p class="note">
+    <b>HTML yüklə</b> — oxucu faylı kompüterə endirilir.<br>
+    <b>Kitabxanama əlavə et</b> — bu brauzerdə saxlanılır, aşağıdan açılır.<br>
+    <b>GitHub-a göndər</b> — saytına commit edilir, hər yerdən oxunur.
+    <span id="ghSettingsLink" style="display:none"> · <a href="#" style="color:#8a7a5a" onclick="toggleGHBox();return false;">Tənzimləmələri dəyiş</a></span>
+  </p>
+
+  <!-- GITHUB SETUP -->
+  <div class="gh-box" id="ghBox">
+    <h3>🐙 GitHub Tənzimləmələri <span style="font-size:0.7rem;color:#555;cursor:pointer;float:right" onclick="document.getElementById('ghBox').classList.remove('visible')">&times; Bağla</span></h3>
+    <div class="gh-row">
+      <span class="gh-label">Token</span>
+      <input class="gh-input" type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+      <button class="gh-save-btn" onclick="saveGHSettings()">Saxla</button>
+    </div>
+    <div class="gh-row">
+      <span class="gh-label">İstifadəçi</span>
+      <input class="gh-input" type="text" id="ghUser" placeholder="bookmate-username">
+    </div>
+    <div class="gh-row">
+      <span class="gh-label">Repo</span>
+      <input class="gh-input" type="text" id="ghRepo" placeholder="bookmate.github.io">
+    </div>
+    <div class="gh-row">
+      <span class="gh-label">Qovluq</span>
+      <input class="gh-input" type="text" id="ghFolder" placeholder="kitablar">
+    </div>
+    <p class="gh-hint">
+      Token almaq üçün <b>kitabın saxlandığı GitHub account-una gir</b>, sonra:<br>
+      <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens</a> → "repo" seç → Generate token.<br>
+      ⚠ Token yalnız bu brauzerdə saxlanılır, heç yerə göndərilmir.
+    </p>
+  </div>
+
+  <div class="status" id="statusBox"></div>
+
+  <!-- LOCAL LIBRARY -->
+  <div class="lib-section">
+    <h2>📚 Kitabxanam</h2>
+    <div id="libList"><p class="lib-empty">Hələ kitab əlavə edilməyib.</p></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════
+function cleanText(raw) {
+  let text = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+  const pars = text.split(/\n\n+/).map(p=>p.replace(/\n/g,' ').trim()).filter(Boolean);
+  const result = [];
+  for (const para of pars) {
+    const sents = splitSentences(para);
+    for (let i=0;i<sents.length;i+=5) result.push(sents.slice(i,i+5).join(' '));
+  }
+  return result;
+}
+function splitSentences(text) {
+  const r = text.match(/[^.!?…]+(?:[.!?…]+(?=\s+[A-ZА-ЯƏÜÖĞIİÇŞ]|$)|[.!?…]+$|$)/g) || [text];
+  return r.map(s=>s.trim()).filter(Boolean);
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/`/g,'&#96;').replace(/\$/g,'&#36;');
+}
+function safeFileName(title) {
+  return title.replace(/[^a-zA-Z0-9\u0400-\u04FF\u0100-\u024F\s]/g,'').trim().replace(/\s+/g,'-').toLowerCase() || 'kitab';
+}
+function showStatus(msg, type) {
+  const b = document.getElementById('statusBox');
+  b.textContent = msg; b.className = 'status show ' + type;
+  if (type === 'ok') setTimeout(()=>b.className='status',4000);
+}
+
+function getFields() {
+  const title = document.getElementById('gtitle').value.trim();
+  const content = document.getElementById('gcontent').value.trim();
+  if (!title) { showStatus('Başlıq daxil edin', 'err'); return null; }
+  if (!content) { showStatus('Mətn daxil edin', 'err'); return null; }
+  return { title, content };
+}
+
+// ════════════════════════════════════════════
+//  DOWNLOAD
+// ════════════════════════════════════════════
+function downloadHTML() {
+  const f = getFields(); if (!f) return;
+  const html = buildReaderHTML(f.title, cleanText(f.content));
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = safeFileName(f.title)+'.html'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════
+//  LOCAL LIBRARY
+// ════════════════════════════════════════════
+const LIB_KEY = 'kitabxana_v1';
+
+function loadLib() {
+  try { return JSON.parse(localStorage.getItem(LIB_KEY)) || []; } catch(e) { return []; }
+}
+function saveLib(lib) {
+  try { localStorage.setItem(LIB_KEY, JSON.stringify(lib)); } catch(e) {
+    showStatus('Yer yoxdur — kitabxana dolub', 'err');
+  }
+}
+
+function saveToLibrary() {
+  const f = getFields(); if (!f) return;
+  const paragraphs = cleanText(f.content);
+  const html = buildReaderHTML(f.title, paragraphs);
+  const lib = loadLib();
+  const existing = lib.findIndex(b => b.title === f.title);
+  const entry = { title: f.title, html, date: new Date().toLocaleDateString('az-AZ') };
+  if (existing >= 0) lib[existing] = entry; else lib.unshift(entry);
+  saveLib(lib);
+  renderLib();
+  showStatus('✓ "' + f.title + '" kitabxanaya əlavə edildi', 'ok');
+}
+
+function openFromLib(idx) {
+  const lib = loadLib();
+  const entry = lib[idx];
+  if (!entry) return;
+  const blob = new Blob([entry.html], {type:'text/html;charset=utf-8'});
+  window.open(URL.createObjectURL(blob), '_blank');
+}
+
+function deleteFromLib(idx) {
+  const lib = loadLib();
+  lib.splice(idx, 1);
+  saveLib(lib);
+  renderLib();
+}
+
+function renderLib() {
+  const lib = loadLib();
+  const container = document.getElementById('libList');
+  if (!lib.length) {
+    container.innerHTML = '<p class="lib-empty">Hələ kitab əlavə edilməyib.</p>'; return;
+  }
+  container.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'lib-list';
+  lib.forEach((entry, idx) => {
+    const item = document.createElement('div');
+    item.className = 'lib-item';
+    item.innerHTML = `
+      <span class="lib-item-title" title="${escHtml(entry.title)}">${escHtml(entry.title)}</span>
+      <span class="lib-item-date">${entry.date||''}</span>
+      <button class="lib-open-btn" onclick="openFromLib(${idx})">Oxu</button>
+      <button class="lib-del-btn" title="Sil" onclick="deleteFromLib(${idx})">✕</button>
+    `;
+    list.appendChild(item);
+  });
+  container.appendChild(list);
+}
+
+// ════════════════════════════════════════════
+//  GITHUB
+// ════════════════════════════════════════════
+const GH_KEY = 'gh_settings_v1';
+
+function toggleGHBox() {
+  const box = document.getElementById('ghBox');
+  box.classList.toggle('visible');
+  if (box.classList.contains('visible')) loadGHSettings();
+}
+
+function loadGHSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(GH_KEY)||'{}');
+    if (s.token) document.getElementById('ghToken').value = s.token;
+    if (s.user)  document.getElementById('ghUser').value  = s.user;
+    if (s.repo)  document.getElementById('ghRepo').value  = s.repo;
+    if (s.folder)document.getElementById('ghFolder').value= s.folder;
+  } catch(e){}
+}
+
+function saveGHSettings() {
+  const s = {
+    token:  document.getElementById('ghToken').value.trim(),
+    user:   document.getElementById('ghUser').value.trim(),
+    repo:   document.getElementById('ghRepo').value.trim(),
+    folder: document.getElementById('ghFolder').value.trim()
+  };
+  try { localStorage.setItem(GH_KEY, JSON.stringify(s)); } catch(e){}
+  showStatus('✓ GitHub tənzimləmələri saxlanıldı', 'ok');
+}
+
+async function pushToGitHub() {
+  const f = getFields(); if (!f) return;
+  let s;
+  try { s = JSON.parse(localStorage.getItem(GH_KEY)||'{}'); } catch(e){ s={}; }
+
+  if (!s.token || !s.user || !s.repo) {
+    document.getElementById('ghBox').classList.add('visible');
+    loadGHSettings();
+    showStatus('⚠ Əvvəlcə GitHub tənzimləmələrini doldurun', 'err'); return;
+  }
+
+  const html = buildReaderHTML(f.title, cleanText(f.content));
+  const folder = (s.folder || 'kitablar').replace(/\/$/,'');
+  const fileName = safeFileName(f.title) + '.html';
+  const path = folder + '/' + fileName;
+  const apiBase = `https://api.github.com/repos/${s.user}/${s.repo}/contents/${path}`;
+
+  showStatus('⏳ GitHub-a göndərilir...', 'loading');
+
+  try {
+    // Check if file exists (to get sha for update)
+    let sha = null;
+    const check = await fetch(apiBase, {
+      headers: { Authorization: 'token ' + s.token, Accept: 'application/vnd.github.v3+json' }
+    });
+    if (check.ok) {
+      const data = await check.json();
+      sha = data.sha;
+    }
+
+    const body = {
+      message: `📖 Kitab əlavə edildi: ${f.title}`,
+      content: btoa(unescape(encodeURIComponent(html))),
+      ...(sha ? { sha } : {})
+    };
+
+    const res = await fetch(apiBase, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'token ' + s.token,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+      const url = `https://${s.user}.github.io/${folder}/${fileName}`;
+      showStatus(`✓ Uğurla yükləndi! Sayt: ${url}`, 'ok');
+    } else {
+      const err = await res.json();
+      showStatus('GitHub xətası: ' + (err.message || res.status), 'err');
+    }
+  } catch(e) {
+    showStatus('Şəbəkə xətası: ' + e.message, 'err');
+  }
+}
+
+// ════════════════════════════════════════════
+//  READER HTML BUILDER
+// ════════════════════════════════════════════
+function buildReaderHTML(title, paragraphs) {
+  const paragraphsJSON = JSON.stringify(paragraphs);
+  const storageKey = 'reader_' + btoa(encodeURIComponent(title.substring(0,30))).replace(/[^a-zA-Z0-9]/g,'').substring(0,24);
+  const escapedTitle = escHtml(title);
+
+  return `<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>${escapedTitle}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body.theme-day{--bg:#F5F0E8;--page-bg:#FAF6EE;--text:#2C2416;--text-muted:#8a7a66;--accent:#8B6914;--border:#D4C9B0;--nav-hover:#8B6914;--panel-bg:#FAF6EE;--panel-border:#D4C9B0;--overlay:rgba(44,36,22,0.18)}
+body.theme-night{--bg:#181510;--page-bg:#1E1B16;--text:#D4C9B0;--text-muted:#7a6e5f;--accent:#C8A84B;--border:#33302A;--nav-hover:#C8A84B;--panel-bg:#22201A;--panel-border:#3a3730;--overlay:rgba(0,0,0,0.45)}
+body.theme-sepia{--bg:#EDE0CC;--page-bg:#F2E8D8;--text:#3B2D1F;--text-muted:#7a6858;--accent:#7B4F2E;--border:#C8B89A;--nav-hover:#7B4F2E;--panel-bg:#F2E8D8;--panel-border:#C8B89A;--overlay:rgba(59,45,31,0.15)}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);transition:background 0.3s,color 0.3s}
+body{display:flex;flex-direction:column;font-family:'Lora',Georgia,serif;touch-action:pan-y}
+.topbar{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0.65rem 1.2rem;border-bottom:1px solid var(--border);background:var(--page-bg);gap:0.5rem;transition:background 0.3s,border-color 0.3s}
+.topbar-title{font-size:0.82rem;color:var(--text-muted);font-style:italic;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.page-indicator{font-size:0.8rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0}
+.reading-area{flex:1;display:flex;align-items:stretch;overflow:hidden;position:relative;min-height:0}
+.nav-btn{flex-shrink:0;width:48px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--border);font-size:2rem;transition:color 0.2s;user-select:none;-webkit-tap-highlight-color:transparent}
+.nav-btn:hover{color:var(--nav-hover)}
+.nav-btn:disabled{opacity:0.18;cursor:default}
+.page-content{flex:1;overflow:hidden;padding:30px 25px;display:flex;flex-direction:column;justify-content:flex-start;position:relative}
+.inner-content{max-width:640px;width:100%;margin:0 auto}
+.para{font-size:1.08rem;line-height:1.88;color:var(--text);margin-bottom:1.35em;text-align:justify;hyphens:auto;transition:color 0.3s,font-size 0.2s}
+.bottombar{flex-shrink:0;padding:0.5rem 1.2rem 0.7rem;background:var(--page-bg);border-top:1px solid var(--border);transition:background 0.3s,border-color 0.3s}
+.progress-row{display:flex;align-items:center;gap:0.7rem}
+.progress-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:visible;cursor:pointer;position:relative}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width 0.35s ease;pointer-events:none}
+.progress-thumb{position:absolute;top:50%;right:0;transform:translate(50%,-50%);width:13px;height:13px;background:var(--accent);border-radius:50%;pointer-events:none;transition:opacity 0.2s;opacity:0}
+.progress-track:hover .progress-thumb{opacity:1}
+.progress-label{font-size:0.73rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;min-width:2.8rem;text-align:right}
+.settings-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1.25rem;padding:0.1rem 0.2rem;line-height:1;transition:color 0.2s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.settings-btn:hover{color:var(--accent)}
+.panel-overlay{position:fixed;inset:0;background:var(--overlay);z-index:100;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.panel-overlay.open{opacity:1;pointer-events:all}
+.settings-panel{position:fixed;bottom:0;left:0;right:0;background:var(--panel-bg);border-top:1px solid var(--panel-border);border-radius:18px 18px 0 0;z-index:101;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);padding:1.2rem 1.4rem 2rem;max-height:55vh;overflow-y:auto}
+.settings-panel.open{transform:translateY(0)}
+.panel-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 1.2rem;cursor:pointer}
+.panel-title{font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem}
+.theme-row{display:flex;gap:0.6rem;margin-bottom:1.4rem}
+.theme-btn{flex:1;padding:0.7rem 0.3rem;border:2px solid var(--panel-border);border-radius:10px;background:transparent;color:var(--text);font-family:'Lora',Georgia,serif;font-size:0.82rem;cursor:pointer;transition:border-color 0.2s,background 0.2s;text-align:center}
+.theme-btn.active{border-color:var(--accent);background:var(--accent);color:#fff}
+.theme-btn:not(.active):hover{border-color:var(--accent)}
+.font-row{display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem}
+.font-label{font-size:0.78rem;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0}
+.font-btn{width:40px;height:40px;border:1px solid var(--panel-border);border-radius:8px;background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s,background 0.2s;flex-shrink:0}
+.font-btn:hover{border-color:var(--accent);background:var(--accent);color:#fff}
+.font-size-display{font-size:0.9rem;color:var(--text-muted);min-width:2.5rem;text-align:center;flex-shrink:0}
+.goto-row{display:flex;align-items:center;gap:0.7rem;margin-bottom:1rem}
+.goto-input{flex:1;background:transparent;border:1px solid var(--panel-border);border-radius:8px;color:var(--text);font-family:'Lora',Georgia,serif;font-size:0.9rem;padding:0.5rem 0.8rem;outline:none;transition:border-color 0.2s}
+.goto-input:focus{border-color:var(--accent)}
+.goto-btn{padding:0.5rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Lora',Georgia,serif;font-size:0.85rem;cursor:pointer;white-space:nowrap;transition:opacity 0.2s}
+.goto-btn:hover{opacity:0.85}
+.page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;max-height:160px;overflow-y:auto;padding:2px 1px 4px}
+.page-grid::-webkit-scrollbar{width:4px}
+.page-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.pg-cell{height:36px;border:1.5px solid var(--panel-border);border-radius:7px;background:transparent;color:var(--text-muted);font-family:'Lora',Georgia,serif;font-size:0.72rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s,background 0.15s,color 0.15s;-webkit-tap-highlight-color:transparent}
+.pg-cell:hover{border-color:var(--accent);color:var(--accent)}
+.pg-cell.current{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:bold}
+.pg-cell.read{border-color:var(--border);background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--text-muted)}
+.panel-close{position:absolute;top:1rem;right:1.2rem;background:none;border:none;font-size:1.3rem;color:var(--text-muted);cursor:pointer;line-height:1;-webkit-tap-highlight-color:transparent}
+.page-content.turning{animation:turn 0.2s ease}
+@keyframes turn{0%{opacity:1;transform:translateX(0)}50%{opacity:0;transform:translateX(-10px)}100%{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body class="theme-day">
+<div class="topbar">
+  <div class="topbar-title">${escapedTitle}</div>
+  <div class="page-indicator" id="pageIndicator">— / —</div>
+</div>
+<div class="reading-area" id="readingArea">
+  <button class="nav-btn" id="prevBtn" onclick="changePage(-1)">&#8249;</button>
+  <div class="page-content" id="pageContent">
+    <div class="inner-content" id="innerContent"></div>
+  </div>
+  <button class="nav-btn" id="nextBtn" onclick="changePage(1)">&#8250;</button>
+</div>
+<div class="bottombar">
+  <div class="progress-row">
+    <div class="progress-track" id="progressTrack" onclick="seekByProgress(event)">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      <div class="progress-thumb" id="progressThumb"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0%</div>
+    <button class="settings-btn" onclick="openPanel()" title="Parametrlər">⚙</button>
+  </div>
+</div>
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="settings-panel" id="settingsPanel">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div class="panel-handle" onclick="closePanel()"></div>
+  <div class="panel-title">Tema</div>
+  <div class="theme-row">
+    <button class="theme-btn active" id="btn-day"   onclick="setTheme('day')">☀ Gündüz</button>
+    <button class="theme-btn"        id="btn-night" onclick="setTheme('night')">🌙 Gecə</button>
+    <button class="theme-btn"        id="btn-sepia" onclick="setTheme('sepia')">📜 Sepia</button>
+  </div>
+  <div class="panel-title">Şrift ölçüsü</div>
+  <div class="font-row">
+    <span class="font-label">A</span>
+    <button class="font-btn" onclick="changeFontSize(-1)">−</button>
+    <span class="font-size-display" id="fontSizeDisplay">17px</span>
+    <button class="font-btn" onclick="changeFontSize(1)">+</button>
+  </div>
+  <div class="panel-title" style="margin-top:0.4rem">Səhifəyə get</div>
+  <div class="goto-row">
+    <input class="goto-input" id="gotoInput" type="number" min="1" placeholder="Səhifə nömrəsi...">
+    <button class="goto-btn" onclick="goToPage()">Get</button>
+  </div>
+  <div class="page-grid" id="pageGrid"></div>
+</div>
+<script>
+const PARAGRAPHS=${paragraphsJSON};
+const STORAGE_KEY='${storageKey}';
+const SETTINGS_KEY='${storageKey}_s';
+let pages=[],currentPage=0,currentFontSize=17,currentTheme='day';
+
+function loadSettings(){try{const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');if(s.theme)currentTheme=s.theme;if(s.fontSize)currentFontSize=s.fontSize;}catch(e){}}
+function saveSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify({theme:currentTheme,fontSize:currentFontSize}));}catch(e){}}
+
+function setTheme(t){
+  currentTheme=t;document.body.className='theme-'+t;
+  ['day','night','sepia'].forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===t));
+  saveSettings();
+}
+
+function changeFontSize(d){
+  currentFontSize=Math.min(28,Math.max(12,currentFontSize+d));
+  saveSettings();
+  const first=(pages[currentPage]||[])[0]||0;
+  buildPages();
+  currentPage=0;
+  for(let i=0;i<pages.length;i++){if(pages[i].includes(first)){currentPage=i;break;}}
+  renderPage(false);
+}
+
+function buildPages(){
+  const pc=document.getElementById('pageContent');
+  const inner=document.getElementById('innerContent');
+  const contentH=pc.clientHeight-60;
+  const m=document.createElement('div');
+  m.className='inner-content';
+  m.style.cssText='position:absolute;visibility:hidden;pointer-events:none;top:-9999px;left:0;width:'+inner.clientWidth+'px;';
+  document.body.appendChild(m);
+  pages=[];let cur=[],curH=0;
+  const GAP=Math.round(currentFontSize*1.35);
+  for(let i=0;i<PARAGRAPHS.length;i++){
+    const p=document.createElement('p');p.className='para';p.style.fontSize=currentFontSize+'px';p.textContent=PARAGRAPHS[i];
+    m.appendChild(p);const h=p.offsetHeight+GAP;m.removeChild(p);
+    if(cur.length>0&&curH+h>contentH){pages.push(cur);cur=[i];curH=h;}
+    else{cur.push(i);curH+=h;}
+  }
+  if(cur.length>0)pages.push(cur);
+  document.body.removeChild(m);
+  const gi=document.getElementById('gotoInput');if(gi)gi.max=pages.length;
+  buildPageGrid();
+}
+
+function renderPage(animate){
+  const inner=document.getElementById('innerContent');
+  const pc=document.getElementById('pageContent');
+  if(animate){pc.classList.remove('turning');void pc.offsetWidth;pc.classList.add('turning');}
+  inner.innerHTML='';
+  (pages[currentPage]||[]).forEach(idx=>{
+    const p=document.createElement('p');p.className='para';p.style.fontSize=currentFontSize+'px';p.textContent=PARAGRAPHS[idx];inner.appendChild(p);
+  });
+  const total=pages.length,cur=currentPage+1;
+  document.getElementById('pageIndicator').textContent=cur+' / '+total;
+  const pct=total<=1?100:Math.round((currentPage/(total-1))*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressThumb').style.right=(100-pct)+'%';
+  document.getElementById('progressLabel').textContent=pct+'%';
+  document.getElementById('prevBtn').disabled=currentPage===0;
+  document.getElementById('nextBtn').disabled=currentPage>=total-1;
+  try{localStorage.setItem(STORAGE_KEY,currentPage);}catch(e){}
+  updatePageGridHighlight();
+}
+
+function changePage(dir){const np=currentPage+dir;if(np<0||np>=pages.length)return;currentPage=np;renderPage(true);}
+function seekByProgress(e){const t=document.getElementById('progressTrack');const r=t.getBoundingClientRect();const ratio=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));currentPage=Math.round(ratio*(pages.length-1));renderPage(true);}
+function goToPage(){const val=parseInt(document.getElementById('gotoInput').value);if(isNaN(val))return;currentPage=Math.max(0,Math.min(pages.length-1,val-1));renderPage(true);closePanel();}
+
+function buildPageGrid(){
+  const grid=document.getElementById('pageGrid');if(!grid)return;
+  grid.innerHTML='';
+  for(let i=0;i<pages.length;i++){
+    const c=document.createElement('button');
+    c.className='pg-cell'+(i<currentPage?' read':'')+(i===currentPage?' current':'');
+    c.textContent=i+1;c.dataset.page=i;
+    c.addEventListener('click',function(){currentPage=parseInt(this.dataset.page);renderPage(true);closePanel();});
+    grid.appendChild(c);
+  }
+  const cur=grid.querySelector('.current');if(cur)cur.scrollIntoView({block:'nearest'});
+}
+function updatePageGridHighlight(){
+  document.querySelectorAll('.pg-cell').forEach((c,i)=>{c.classList.toggle('current',i===currentPage);c.classList.toggle('read',i<currentPage);});
+  const cur=document.querySelector('.pg-cell.current');if(cur)cur.scrollIntoView({block:'nearest'});
+}
+
+function openPanel(){document.getElementById('panelOverlay').classList.add('open');document.getElementById('settingsPanel').classList.add('open');}
+function closePanel(){document.getElementById('panelOverlay').classList.remove('open');document.getElementById('settingsPanel').classList.remove('open');}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')changePage(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')changePage(-1);
+  if(e.key==='Enter'&&document.getElementById('gotoInput')===document.activeElement)goToPage();
+});
+
+let tx=0,ty=0;
+document.getElementById('readingArea').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+document.getElementById('readingArea').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40)changePage(dx<0?1:-1);
+},{passive:true});
+
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{const fp=(pages[currentPage]||[])[0]||0;buildPages();currentPage=0;for(let i=0;i<pages.length;i++){if((pages[i]||[]).includes(fp)){currentPage=i;break;}}renderPage(false);},300);});
+
+window.addEventListener('load',()=>{
+  loadSettings();
+  document.body.className='theme-'+currentTheme;
+  ['day','night','sepia'].forEach(x=>document.getElementById('btn-'+x).classList.toggle('active',x===currentTheme));
+  document.getElementById('fontSizeDisplay').textContent=currentFontSize+'px';
+  buildPages();
+  let saved=0;try{saved=parseInt(localStorage.getItem(STORAGE_KEY))||0;}catch(e){}
+  currentPage=Math.min(saved,Math.max(0,pages.length-1));
+  renderPage(false);
+});
+<\/script>
+</body>
+</html>`;
+}
+
+// ── GitHub button logic ──
+document.getElementById('btnGithub').addEventListener('click', function() {
+  const s = (() => { try { return JSON.parse(localStorage.getItem('gh_settings_v1')||'{}'); } catch(e){ return {}; }})();
+  if (s.token && s.user && s.repo) {
+    // Settings already saved — push directly, show settings box only if they want to change
+    pushToGitHub();
+  } else {
+    toggleGHBox();
+  }
+});
+
+// ── Init library ──
+renderLib();
+</script>
+</body>
+</html>
